@@ -1,0 +1,6 @@
+__pycache__
+*.bin
+output/
+output_*/
+input/
+*.db

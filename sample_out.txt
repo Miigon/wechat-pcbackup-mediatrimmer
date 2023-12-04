@@ -1,0 +1,41 @@
+writing to output file: BAK_0_MEDIA
+writing to output file: BAK_1_MEDIA
+writing to output file: BAK_2_MEDIA
+writing to output file: BAK_3_MEDIA
+writing to output file: BAK_4_MEDIA
+writing to output file: BAK_5_MEDIA
+writing to output file: BAK_6_MEDIA
+writing to output file: BAK_7_MEDIA
+writing to output file: BAK_8_MEDIA
+writing to output file: BAK_9_MEDIA
+writing to output file: BAK_10_MEDIA
+writing to output file: BAK_11_MEDIA
+writing to output file: BAK_12_MEDIA
+writing to output file: BAK_13_MEDIA
+writing to output file: BAK_14_MEDIA
+writing to output file: BAK_15_MEDIA
+writing to output file: BAK_16_MEDIA
+writing to output file: BAK_17_MEDIA
+writing to output file: BAK_18_MEDIA
+writing to output file: BAK_19_MEDIA
+writing to output file: BAK_20_MEDIA
+writing to output file: BAK_21_MEDIA
+writing to output file: BAK_22_MEDIA
+writing to output file: BAK_23_MEDIA
+writing to output file: BAK_24_MEDIA
+writing to output file: BAK_25_MEDIA
+writing to output file: BAK_26_MEDIA
+DB: freed 38759 dangling media ids
+DB: vacuumming...
+====== stats ======
+incomplete media count: 38757  (~1128.01 MiB)
+inconsistently sized media count: 2
+media with holes: 0
+-------------------
+media with duplicated blocks: 81718
+dedup total MiB cut: 121803.54
+dedup cut rate (%): 68.19
+before size GiB: 174.44
+after size GiB: 53.27
+media count: 325536 -> 286777
+block count: 828886 -> 360369
