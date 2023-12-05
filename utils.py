@@ -1,6 +1,4 @@
 import io
-import os
-
 
 input_media_file = {}
 def get_input_media_file(path: str) -> io.BufferedReader:

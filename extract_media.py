@@ -8,11 +8,11 @@ import hashlib
 def extract_media(con, input_dir, media_id, output_file):
 	out = open(output_file, "bw")
 
-	for (inneroffset,blocklen,totallen,fileoffset,filename) in con.execute("select InnerOffSet,Length,TotalLen,OffSet,FileName from MsgFileSegment where MapKey = {} order by InnerOffSet asc;".format(media_id)):
+	for (inneroffset,segmentlen,totallen,fileoffset,filename) in con.execute("select InnerOffSet,Length,TotalLen,OffSet,FileName from MsgFileSegment where MapKey = {} order by InnerOffSet asc;".format(media_id)):
 		input = utils.get_input_media_file(os.path.join(input_dir, filename))
 		input.seek(fileoffset, 0)
 		out.seek(inneroffset, 0)
-		out.write(input.read(blocklen))
+		out.write(input.read(segmentlen))
 
 	out.close()
 

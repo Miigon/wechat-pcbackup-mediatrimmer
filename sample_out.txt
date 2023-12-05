@@ -1,3 +1,5 @@
+mode: NON-dry-run!! result data will be written to ./output/
+connecting to output db: ./output/Backup_output_before_encrypt.db
 writing to output file: BAK_0_MEDIA
 writing to output file: BAK_1_MEDIA
 writing to output file: BAK_2_MEDIA
@@ -24,18 +26,19 @@ writing to output file: BAK_22_MEDIA
 writing to output file: BAK_23_MEDIA
 writing to output file: BAK_24_MEDIA
 writing to output file: BAK_25_MEDIA
-writing to output file: BAK_26_MEDIA
-DB: freed 38759 dangling media ids
+DB: freed 38765 dangling media ids
 DB: vacuumming...
 ====== stats ======
-incomplete media count: 38757  (~1128.01 MiB)
-inconsistently sized media count: 2
-media with holes: 0
--------------------
-media with duplicated blocks: 81718
-dedup total MiB cut: 121803.54
-dedup cut rate (%): 68.19
-before size GiB: 174.44
-after size GiB: 53.27
-media count: 325536 -> 286777
-block count: 828886 -> 360369
+filtered media:
+        incomplete media count: 38757  (1128.01 MiB)
+        inconsistently sized media count: 2  (16.87 MiB)
+        media with holes: 0  (0.00 MiB)
+        custom filtered media: 0  (0.00 MiB)
+segment dedup:
+        media with duplicated segments: 81718
+        dedup total size cut: 121803.54 MiB (68.19% cut)
+results:
+        before size: 174.44 GiB
+        after size: 53.27 GiB
+        media count: 325536 -> 286777 (88.09%)
+        segment count: 828886 -> 360369 (43.48%)
