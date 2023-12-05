@@ -14,7 +14,7 @@
 
 在此之后，本脚本会重新生成所有 `BAK_*_MEDIA` 文件，得到（hopefully）体积更小的备份文件。
 
-> 技术细节：微信手机备份聊天记录到电脑过程中：图片、文件等资源会被切片、加密后存储在 `BAK_0_MEDIA`、`BAK_1_MEDIA`... 等一系列文件中（以 ~512KB 为最大大小做分片，每个 `BAK_*_MEDIA` 文件最大大小 1GB~2GB 不等），并且在 `Backup.db` 数据库的 `MsgFileSegment` 表记录这些切片并分配 MediaID（存储在 `MsgMedia` 表）。  
+> 技术细节：微信手机备份聊天记录到电脑过程中：图片、文件等资源会被切片、加密后存储在 `BAK_0_MEDIA`、`BAK_1_MEDIA`... 等一系列文件中（以 ~512KB 为最大大小做分片，每个 `BAK_*_MEDIA` 文件最大大小 1GB-2GB 不等），并且在 `Backup.db` 数据库的 `MsgFileSegment` 表记录这些切片并分配 MediaID（存储在 `MsgMedia` 表）。  
 > 恢复数据过程则为：从 `Backup.db` 数据库中的 `MsgMedia` 表查到 MediaID，并通过 MediaID 在 `MsgFileSegment` 中找到该资源文件各个片段，以及所对应的 `BAK_*_MEDIA` 文件的位置以及大小，读取并拼接得到原始文件。
 
 ## Usage
