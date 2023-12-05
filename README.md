@@ -21,21 +21,49 @@
 
 本脚本除 python3 以外无特殊依赖。
 
-> 为了不引入对 sqlcipher 的依赖，本脚本需要您自行提前解密 `Backup.db` 文件，并在执行完成后自行以相同参数和密钥重新加密。
-> 
-> 加解密方式以及密钥获得方式，不同平台可能存在差异。这里不详述，请参考互联网上的方法。操作前请注意备份，建议在副本上操作。
+### 使用 pysqlcipher3
 
-1. 解密 `Backup.db` 数据库（sqlite3_rekey() 为空key）
-2. 将其命名为 `Backup_decrypted.db`，放在与脚本同级目录下
-3. 将含有所有 `BAK_*_MEDIA` 文件的文件夹（备份文件夹根目录）整个文件夹复制到脚本同级目录下，并重命名为`./input/`
-4. (可选, 推荐) 运行 `python media_trimmer.py`，查看运行与输出是否正常（默认 dry-run）
-5. 运行 `python media_trimmer.py --no-dry`，等待构建输出
-6. 运行成功后，`./output` 文件夹下产生输出的 `BAK_*_MEDIA` 文件以及 `Backup_output_before_encrypt.db` 数据库文件
-7. (非必需) 运行 `python extract_media.py {media_id}`，该工具将分别从原始备份以及处理后的输出备份中分别提取指定 MediaID 的资源文件，并分别计算 MD5，校验处理前后数据是否一致。
-8. 将数据库文件 `Backup_output_before_encrypt.db` 重新以 **【相同加密参数及密钥】** 加密，得到输出 `Backup.db`
-9. 移走/删除微信备份文件夹下的所有 `BAK_*_MEDIA` （注意备份！注意不要误删 `BAK_*_TEXT`）
-10. 将新 `Backup.db` 以及 `./output` 文件夹下的所有新 `BAK_*_MEDIA`，替换到微信备份文件夹下
-11. 重新登陆电脑端微信，测试恢复聊天记录（重点关注图片）
+如果你的平台是 macOS 或者其他可以比较方便安装 libsqlcipher 的平台，建议使用本方法。
+使用你的平台支持的方式安装 libsqlcipher，例：
+```bash
+# macOS
+brew install sqlcipher
+# debian/ubuntu
+sudo apt install sqlcipher
+# fedora/centos
+sudo dnf install sqlcipher
+```
+
+然后，安装 pysqlcipher3。
+```bash
+pip install pysqlcipher3
+```
+
+安装成功后，跟随以下步骤：
+
+1. (可选, 推荐) 运行 `python media_trimmer.py -i [备份目录] [Backup.db密钥]`，查看碎片和重复片段数量（dry-run，如果不是特别多的话建议不用清理）
+2. 运行成功后，`./output` 文件夹下产生输出的 `BAK_*_MEDIA` 文件以及 `Backup.db` 数据库文件（已加密）
+3. _(非必需) 运行 `./extract_and_compare.sh [备份目录] ./output [任意MediaID] [Backup.db密钥]`，该工具将分别从原始备份以及处理后的输出备份中分别提取指定 MediaID 的资源文件，并分别计算 MD5，校验处理前后数据是否一致。_
+4. 移走/删除微信备份文件夹下的所有多余 `BAK_*_MEDIA` （注意备份！注意不要误删 `BAK_*_TEXT`）
+5. 将 `./output` 文件夹下 `Backup.db` 以及所有新 `BAK_*_MEDIA` 替换到微信备份文件夹下
+6. 重新登陆电脑端微信，测试恢复聊天记录（重点关注图片/文件等资源）
+
+### 手动加解密
+
+为了不引入对 sqlcipher 的依赖，本脚本支持您自行提前解密过的 `Backup.db` 文件，并在执行完成后自行以相同参数和密钥手动重新加密输出文件。  
+这样做的话，不需要安装任何依赖就可以运行本脚本。
+
+加解密方式以及密钥获得方式，不同平台可能存在差异。这里不详述，请参考互联网上的方法。操作前请注意备份，建议在副本上操作。
+
+1. 手工解密 `Backup.db` 数据库（用 key 和正确参数打开并更改 key 为空），并**另存为 `Backup_decrypted.db`**. (置于 Backup.db 同目录下)
+2. (可选, 推荐) 运行 `python media_trimmer.py -i [备份目录]`，查看碎片和重复片段数量（dry-run，如果不是特别多的话建议不用清理）
+3. 运行 `python media_trimmer.py -i [备份目录] -o ./output --no-dry`，等待构建输出
+4. 运行成功后，`./output` 文件夹下产生输出的 `BAK_*_MEDIA` 文件以及 `Backup_output_before_encrypt.db` 数据库文件
+5. _(非必需) 运行 `./extract_and_compare.sh [备份目录] ./output [任意MediaID]`，该工具将分别从原始备份以及处理后的输出备份中分别提取指定 MediaID 的资源文件，并分别计算 MD5，校验处理前后数据是否一致。_
+6. 将数据库文件 `Backup_output_before_encrypt.db` 重新以 **【相同加密参数及密钥】** 加密，得到输出 `Backup.db`
+7. 移走/删除微信备份文件夹下的所有多余 `BAK_*_MEDIA` （注意备份！注意不要误删 `BAK_*_TEXT`）
+8. 将新 `Backup.db` 以及 `./output` 文件夹下的所有新 `BAK_*_MEDIA`，替换到微信备份文件夹下
+9. 重新登陆电脑端微信，测试恢复聊天记录（重点关注图片/文件等资源）
 
 ## Disclaimer
 

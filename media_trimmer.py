@@ -1,19 +1,8 @@
-import sqlite3
 import os
 import shutil
 import utils
 import sys
-
-KB = 1024
-MB = KB*1024
-GB = MB*1024
-
-input_dir = "./input/"
-input_db_decrypted = "Backup_decrypted.db"
-output_dir = "./output/"
-output_db_name = "Backup_output_before_encrypt.db" # within output_dir
-
-output_db = os.path.join(output_dir, output_db_name)
+import argparse
 
 def custom_media_filter(con, media_id, media_len):
 	# NOTE: write your custom media filtering rule here.
@@ -22,29 +11,74 @@ def custom_media_filter(con, media_id, media_len):
 	# 	return False
 	return True
 
-DRY_RUN = True
-DEBUG = False
+parser = argparse.ArgumentParser(prog='media_trimmer')
 
-if sys.argv.count("--no-dry") > 0:
-	DRY_RUN = False
+parser.add_argument("--no-dry", action='store_true')
+parser.add_argument("--skip-copy", action='store_true', help="do not copy old data to new BAK_*_MEDIA files. (only build database.)")
+parser.add_argument("--debug", action='store_true')
+parser.add_argument("--input", "-i", default="./input")
+parser.add_argument("--output", "-o", default="./output")
+parser.add_argument("-k", "--key")
 
-if sys.argv.count("--debug") > 0:
-	DEBUG = True
+args = parser.parse_args()
+
+DRY_RUN = not args.no_dry
+SKIP_COPY = args.skip_copy
+DEBUG = args.debug
+KEY = args.key
+
+if KEY is not None:
+	print("key provided, use sqlcipher. make sure libsqlcipher is installed")
+	import pysqlcipher3.dbapi2 as sqlite3
+else:
+	import sqlite3
+	
+def setup_db_conn(con):
+	if KEY is not None:
+		utils.setup_sqlcipher_param(con, KEY)	
+	return con
+
+KB = 1024
+MB = KB*1024
+GB = MB*1024
+
+input_dir = args.input
+output_dir = args.output
+input_db_name = "Backup_decrypted.db"
+output_db_name = "Backup_output_before_encrypt.db" # within output_dir
+if KEY is not None:
+	input_db_name = "Backup.db"
+	output_db_name = "Backup.db"
+
+input_db = os.path.join(input_dir, input_db_name)
+output_db = os.path.join(output_dir, output_db_name)
+
+if not DRY_RUN:
+	if os.path.realpath(input_dir) == os.path.realpath(output_dir):
+		print("input path and output path cannot be the same!")
+		sys.exit(-1)
+		
+	if os.path.commonprefix([os.path.realpath(output_dir), os.path.realpath(".")]) == os.path.realpath(output_dir):
+		print("output path cannot be the current path or parent path!")
+		sys.exit(-1)
 
 print(DRY_RUN and "mode: dry-run. nothing will be written. use --no-dry for an actual run" or ("mode: NON-dry-run!! result data will be written to "+output_dir))
+
+if SKIP_COPY:
+	print("skip copying data to BAK_*_MEDIA files. only build Backup.db")
 
 if not DRY_RUN:
 	shutil.rmtree(output_dir, ignore_errors=True)
 	os.mkdir(output_dir)
-	shutil.copyfile(input_db_decrypted, output_db, follow_symlinks=True)
+	shutil.copyfile(input_db, output_db, follow_symlinks=True)
 
-con = sqlite3.connect(input_db_decrypted)
+con = setup_db_conn(sqlite3.connect(input_db))
 con.execute("pragma query_only = ON;")
 
 if not DRY_RUN:
 	global conout
 	print("connecting to output db:", output_db)
-	conout = sqlite3.connect(output_db)
+	conout = setup_db_conn(sqlite3.connect(output_db))
 	conout.execute("delete from MsgFileSegment;")
 	conout.commit()
 
@@ -82,6 +116,9 @@ def open_output_media_file(new_file_id):
 	cur_file_id = new_file_id
 	cur_file_size = 0
 	cur_output_file_name = "BAK_{}_MEDIA".format(new_file_id)
+	if SKIP_COPY:
+		print("skipped copy:", cur_output_file_name)
+		return None
 	print(DRY_RUN and "writing to output file (dry):" or "writing to output file:", cur_output_file_name)
 	if DRY_RUN: return None
 	return open(os.path.join(output_dir, cur_output_file_name), "bw")
@@ -165,13 +202,13 @@ for (i,) in con.execute("select DISTINCT(MapKey) key from MsgFileSegment order b
 		input = utils.get_input_media_file(os.path.join(input_dir, srcfile))
 		input.seek(fileoffset, 0)
 		newfileoffset = cur_file_size
-		if not DRY_RUN: cur_output_file.write(input.read(segmentlen))
+		if not DRY_RUN and not SKIP_COPY: cur_output_file.write(input.read(segmentlen))
 		new_segments.append((inneroffset, segmentlen, newfileoffset, cur_output_file_name))
 		cur_inneroffset += segmentlen
 		cur_file_size += segmentlen
 		if cur_file_size >= EXPORT_FILE_SIZE_LIMIT:
 			# create and open a new media file for future segments
-			if not DRY_RUN: cur_output_file.close()
+			if not DRY_RUN and not SKIP_COPY: cur_output_file.close()
 			cur_output_file = open_output_media_file(cur_file_id + 1)
 	# write media segment info to db
 	for (inneroffset, segmentlen, fileoffset, filename) in new_segments:

@@ -1,9 +1,8 @@
-import sqlite3
 import os
 import sys
 import utils
 import hashlib
-
+import argparse
 
 def extract_media(con, input_dir, media_id, output_file):
 	out = open(output_file, "bw")
@@ -16,15 +15,6 @@ def extract_media(con, input_dir, media_id, output_file):
 
 	out.close()
 
-def _filehash(file):
-	with open(file, "rb") as f:
-		file_hash = hashlib.md5()
-		chunk = f.read(8192)
-		while chunk:
-			file_hash.update(chunk)
-			chunk = f.read(8192)
-	return file_hash.hexdigest()
-
 if __name__ == '__main__':
 	# usage: python extract_media.py {media_id}
 
@@ -34,21 +24,31 @@ if __name__ == '__main__':
 	# use the following sql query to get all media ids that span across multiple
 	# files (for edge case testing):
 	# 		select * from (select MapKey, count(DISTINCT(FileName)) as fc from MsgFileSegment GROUP BY MapKey) WHERE fc > 1;
-	media_id = int(sys.argv[1])
 
-	con = sqlite3.connect("Backup_decrypted.db")
-	con2 = sqlite3.connect("./output/Backup_output_before_encrypt.db")
+	parser = argparse.ArgumentParser(prog='extract_media')
+
+	parser.add_argument("--id", required=True)
+	parser.add_argument("--db", required=True)
+	parser.add_argument("--input", required=True)
+	parser.add_argument("--output_file", "-o", required=True)
+	parser.add_argument("-k", "--key")
+
+	args = parser.parse_args()
+
+	KEY = args.key
+
+	if KEY is not None:
+		import pysqlcipher3.dbapi2 as sqlite3
+	else:
+		import sqlite3
+
+	media_id = int(args.id)
+
+	con = sqlite3.connect(args.db)
 	con.execute("pragma query_only = ON;")
-	con2.execute("pragma query_only = ON;")
+	if KEY is not None:
+		utils.setup_sqlcipher_param(con, KEY)
 
-	output_before = "extracted_media_{}_before.bin".format(media_id)
-	output_after = "extracted_media_{}_after.bin".format(media_id)
-
-	extract_media(con, "./input/", media_id, output_before)
-	extract_media(con2, "./output/", media_id, output_after)
+	extract_media(con, args.input, media_id, args.output_file)
 	
-	print("MD5 ({}) = {}".format(output_before,_filehash(output_before)))
-	print("MD5 ({}) = {}".format(output_after,_filehash(output_after)))
-
 	con.close()
-	con2.close()

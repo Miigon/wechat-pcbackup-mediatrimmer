@@ -4,3 +4,4 @@ output/
 output_*/
 input/
 *.db
+*.db-*
