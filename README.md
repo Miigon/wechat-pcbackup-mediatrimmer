@@ -65,6 +65,41 @@ pip install pysqlcipher3
 8. 将新 `Backup.db` 以及 `./output` 文件夹下的所有新 `BAK_*_MEDIA`，替换到微信备份文件夹下
 9. 重新登陆电脑端微信，测试恢复聊天记录（重点关注图片/文件等资源）
 
+## 样例输出
+
+这是我自己的一个用了4年左右的聊天记录备份，期间增量备份过4次，每次增量备份都有较多失败重试：
+
+```
+key provided, use sqlcipher. make sure libsqlcipher is installed
+mode: NON-dry-run!! result data will be written to ./output
+connecting to output db: ./output/Backup.db
+writing to output file: BAK_0_MEDIA
+writing to output file: BAK_1_MEDIA
+......
+writing to output file: BAK_25_MEDIA
+writing to output file: BAK_26_MEDIA
+DB: freed 38759 dangling media ids
+DB: vacuumming...
+====== stats ======
+filtered media:
+        incomplete media count: 38757  (1128.01 MiB)
+        inconsistently sized media count: 2  (16.87 MiB)
+        media with holes: 0  (0.00 MiB)
+        custom filtered media: 0  (0.00 MiB)
+segment dedup:
+        media with duplicated segments: 81718
+        dedup total size cut: 121803.54 MiB (68.19% cut)
+results:
+        before size: 174.44 GiB
+        after size: 53.27 GiB
+        media count: 325536 -> 286777 (88.09%)
+        segment count: 828886 -> 360369 (43.48%)
+```
+
+通过删除重复片段以及无效文件，将备份文件从 174.44 GiB 降到了 53.27 GiB。
+
+这里是比较极端的样例。其中有一个800MB的文件重复了数十次。
+
 ## Disclaimer
 
 本脚本仅在 macOS 版微信 3.8.4 下测试通过。
