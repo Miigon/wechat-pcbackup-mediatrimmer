@@ -229,6 +229,31 @@ if not DRY_RUN:
 	freed_mediaids = conout.execute("delete from MsgMedia where MediaId in (select MediaId from MsgMedia where MediaId not in (select MapKey from MsgFileSegment));").rowcount
 	conout.commit()
 	print("DB: freed {} dangling media ids".format(freed_mediaids))
+
+# recalculate total size for all sessions.
+if not DRY_RUN:
+	print("DB: recalculating TotalSize field for all sessions...")
+	conout.execute("""
+	update Session set TotalSize = (
+	select (ifnull(t1.mediasize,0)+ifnull(t2.txtsize,0)) calc_size from Session s
+	left join (select mm.talker talker, sum(mfs.Length) mediasize from MsgMedia mm inner join MsgFileSegment mfs on mm.MediaId = mfs.MapKey group by mm.talker) t1 on t1.talker = s.talker
+	left join (select UsrName talker, sum(`Length`) txtsize from MsgSegments group by talker) t2 on t2.talker = s.talker
+	where s.talker = Session.talker
+	);
+	""")
+	conout.commit()
+	# NOTE: check result by running this sql query:
+	#
+	# select *, (calc_mediasize+calc_txtsize) calc_totalsize, calc_mediasize+calc_txtsize-totalsize_original reduction from (
+	# select NickName, s.talker, TotalSize totalsize_original, ifnull(t1.mediasize,0) calc_mediasize, ifnull(t2.txtsize,0) calc_txtsize from Session s
+	# left join (select mm.talker talker, sum(mfs.Length) mediasize from MsgMedia mm inner join MsgFileSegment mfs on mm.MediaId = mfs.MapKey group by mm.talker) t1 on t1.talker = s.talker
+	# left join (select UsrName talker, sum(`Length`) txtsize from MsgSegments group by talker) t2 on t2.talker = s.talker
+	# ) where reduction != 0 order by reduction asc;
+	#
+	# if 0 rows are returned, all TotalSize fields are correct.
+
+# do a final vacuum
+if not DRY_RUN:
 	print("DB: vacuumming...")
 	conout.execute("VACUUM;")
 
